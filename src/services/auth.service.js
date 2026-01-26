@@ -34,6 +34,6 @@ export async function login({ email, password }) {
   const valid = await comparePassword(password, user.password);
   if (!valid) throw new AppError("Invalid Password", 401);
 
-  const token = generateToken({ id: user.id });
+  const token = generateToken({ id: user.id, role: user.role });
   return { token };
 }

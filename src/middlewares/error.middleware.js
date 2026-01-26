@@ -1,15 +1,26 @@
+import { AppError } from "../utils/app-error.js";
+
 export default function errorMiddleware(err, req, res, next) {
-  const statusCode = err.statusCode || 500;
+  let error = { ...err };
+  error.message = err.message;
+
+  error.statusCode = err.statusCode || 500;
+  error.status = err.status || "error";
 
   if (err.code === "P2002") {
-    return res.status(400).json({
-      status: "fail",
-      message: "Email Sudah Digunakan",
-    });
+    error = new AppError("Email Sudah Digunakan", 400);
   }
 
-  res.status(statusCode).json({
-    status: err.status || "error",
-    message: err.message || "Internal Server Error",
+  if (err.name === "JsonWebTokenError") {
+    error = new AppError("Invalid Token", 401);
+  }
+
+  if (err.name === "TokenExpiredError") {
+    error = new AppError("Token Expired", 401);
+  }
+
+  res.status(error.statusCode).json({
+    status: error.status,
+    message: error.message,
   });
 }
