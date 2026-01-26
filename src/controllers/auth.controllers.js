@@ -1,7 +1,12 @@
 import * as authService from "../services/auth.service.js";
+import {
+  validatelogin,
+  validateRegister,
+} from "../validations/auth.validation.js";
 
 export async function register(req, res, next) {
   try {
+    validateRegister(req.body);
     const result = await authService.register(req.body);
     res.status(201).json(result);
   } catch (err) {
@@ -11,6 +16,7 @@ export async function register(req, res, next) {
 
 export async function login(req, res, next) {
   try {
+    validatelogin(req.body);
     const result = await authService.login(req.body);
     res.json(result);
   } catch (err) {
