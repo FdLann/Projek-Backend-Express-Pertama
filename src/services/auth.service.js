@@ -28,7 +28,9 @@ export async function register(data) {
 }
 
 export async function login({ email, password }) {
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email, deletedAt: null },
+  });
   if (!user) throw new AppError("User Not Found", 404);
 
   const valid = await comparePassword(password, user.password);

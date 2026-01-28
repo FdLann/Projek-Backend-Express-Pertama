@@ -3,7 +3,7 @@ import { AppError } from "../utils/app-error.js";
 
 export async function getProfile(userId) {
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: userId, deletedAt: null },
     select: {
       id: true,
       name: true,
@@ -32,7 +32,7 @@ export async function updateProfile(userId, data) {
     }
   }
   const user = await prisma.user.update({
-    where: { id: userId },
+    where: { id: Number(userId), deletedAt: null },
     data: {
       ...(name && { name }),
       ...(email && { email }),
@@ -146,6 +146,50 @@ export async function updateUserRole(userId, role) {
       name: true,
       email: true,
       role: true,
+    },
+  });
+}
+
+export async function softDeleteUser(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: Number(userId) },
+  });
+
+  if (!user) {
+    throw new AppError("User Not Found", 404);
+  }
+
+  if (user.deletedAt) {
+    throw new AppError("User Already deleted", 400);
+  }
+
+  return prisma.user.update({
+    where: { id: Number(userId) },
+    data: {
+      deletedAt: new Date(),
+    },
+    select: {
+      id: true,
+      deletedAt: true,
+    },
+  });
+}
+
+export async function restoreUser(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: Number(userId) },
+  });
+
+  if (!user || !user.deletedAt) {
+    throw new AppError("User Not Deleted", 400);
+  }
+
+  return prisma.user.update({
+    where: { id: Number(userId) },
+    data: { deletedAt: null },
+    select: {
+      id: true,
+      updatedAt: true,
     },
   });
 }

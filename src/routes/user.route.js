@@ -1,9 +1,11 @@
 import express from "express";
 import {
+  deleteSoftUser,
   deleteUser,
   getMe,
   getUsers,
   promoteUser,
+  restoreDataUser,
   updateMe,
   updateRole,
 } from "../controllers/user.controllers.js";
@@ -30,5 +32,14 @@ router.patch("/:id/role", authMiddleware, authorizeRole("ADMIN"), updateRole);
 
 // delete user By Admin
 router.delete("/:id", authMiddleware, authorizeRole("ADMIN"), deleteUser);
+
+//soft delete admin
+router.delete(
+  "/soft/:id",
+  authMiddleware,
+  authorizeRole("ADMIN"),
+  deleteSoftUser,
+);
+router.patch("/:id", authMiddleware, authorizeRole("ADMIN"), restoreDataUser);
 
 export default router;
