@@ -1,15 +1,13 @@
 import prisma from "../config/prisma.js";
+import { userRepository } from "../repositories/user.repository.js";
 import { AppError } from "../utils/app-error.js";
 
 export async function getProfile(userId) {
-  const user = await prisma.user.findUnique({
-    where: { id: userId, deletedAt: null },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      createdAt: true,
-    },
+  const user = await userRepository.findActiveById(userId, {
+    id: true,
+    name: true,
+    email: true,
+    createdAt: true,
   });
   if (!user) {
     throw new AppError("User Not Found", 404);
@@ -23,29 +21,33 @@ export async function updateProfile(userId, data) {
   if (!name && !email) {
     throw new AppError("Nothing to Update", 400);
   }
+
+  const user = await userRepository.findActiveById(userId);
+
+  if (!user) {
+    throw new AppError("User Not Found", 404);
+  }
+
   if (email) {
-    const existing = await prisma.user.findUnique({
-      where: { email },
-    });
+    const existing = await userRepository.findActiveByEmail(email);
     if (existing && existing.id !== userId) {
       throw new AppError("Email Sudah Digunakan", 400);
     }
   }
-  const user = await prisma.user.update({
-    where: { id: Number(userId), deletedAt: null },
-    data: {
+
+  return userRepository.updateById(
+    userId,
+    {
       ...(name && { name }),
       ...(email && { email }),
     },
-    select: {
+    {
       id: true,
       name: true,
       email: true,
       createdAt: true,
     },
-  });
-
-  return user;
+  );
 }
 
 export async function deleteUserByAdmin(userId) {
@@ -73,21 +75,9 @@ export async function getAllUsers(query) {
   const skip = (page - 1) * limit;
 
   const [users, total] = await Promise.all([
-    prisma.user.findMany({
-      skip,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
-    }),
-    prisma.user.count(),
+    userRepository.findAll({ skip, take: limit }),
+    userRepository.countActive(),
   ]);
-  const totalPages = Math.ceil(total / limit);
 
   return {
     users,
@@ -151,9 +141,7 @@ export async function updateUserRole(userId, role) {
 }
 
 export async function softDeleteUser(userId) {
-  const user = await prisma.user.findUnique({
-    where: { id: Number(userId) },
-  });
+  const user = await userRepository.findById(userId);
 
   if (!user) {
     throw new AppError("User Not Found", 404);
@@ -163,33 +151,15 @@ export async function softDeleteUser(userId) {
     throw new AppError("User Already deleted", 400);
   }
 
-  return prisma.user.update({
-    where: { id: Number(userId) },
-    data: {
-      deletedAt: new Date(),
-    },
-    select: {
-      id: true,
-      deletedAt: true,
-    },
-  });
+  return userRepository.softDelete(userId);
 }
 
 export async function restoreUser(userId) {
-  const user = await prisma.user.findUnique({
-    where: { id: Number(userId) },
-  });
+  const user = await userRepository.findById(userId);
 
   if (!user || !user.deletedAt) {
     throw new AppError("User Not Deleted", 400);
   }
 
-  return prisma.user.update({
-    where: { id: Number(userId) },
-    data: { deletedAt: null },
-    select: {
-      id: true,
-      updatedAt: true,
-    },
-  });
+  return userRepository.restore(userId);
 }
