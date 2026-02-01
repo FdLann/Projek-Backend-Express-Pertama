@@ -79,6 +79,8 @@ export async function getAllUsers(query) {
     userRepository.countActive(),
   ]);
 
+  const totalPages = Math.ceil(total / limit);
+
   return {
     users,
     meta: {
@@ -162,4 +164,32 @@ export async function restoreUser(userId) {
   }
 
   return userRepository.restore(userId);
+}
+
+export async function getDeletedUsers(query) {
+  let { page = 1, limit = 10 } = query;
+
+  page = Number(page);
+  limit = Number(limit);
+
+  if (page < 1 || limit < 1) {
+    throw new AppError("Invalid Pagination Value", 400);
+  }
+
+  const skip = (page - 1) * limit;
+
+  const [users, total] = await Promise.all([
+    userRepository.findAllDeleted({ skip, take: limit }),
+    userRepository.countDeleted(),
+  ]);
+
+  return {
+    users,
+    meta: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }

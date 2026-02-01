@@ -2,6 +2,7 @@ import express from "express";
 import {
   deleteSoftUser,
   deleteUser,
+  getDeletedUsers,
   getMe,
   getUsers,
   promoteUser,
@@ -18,6 +19,9 @@ router.get("/me", authMiddleware, getMe);
 router.put("/me", authMiddleware, updateMe);
 // router get page By Admin
 router.get("/", authMiddleware, authorizeRole("ADMIN"), getUsers);
+
+// admin see deleted user
+router.get("/deleted", authMiddleware, authorizeRole("ADMIN"), getDeletedUsers);
 
 // update role Admin by Admin
 router.patch(

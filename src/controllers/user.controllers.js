@@ -76,3 +76,12 @@ export async function restoreDataUser(req, res, next) {
     next(err);
   }
 }
+
+export async function getDeletedUsers(req, res, next) {
+  try {
+    const result = await userService.getDeletedUsers(req.query);
+    successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+}

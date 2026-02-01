@@ -1,4 +1,4 @@
-import prisma from "../configs/prisma.js";
+import prisma from "../config/prisma.js";
 
 export const userRepository = {
   findActiveById(id, select) {
@@ -75,6 +75,34 @@ export const userRepository = {
   countActive() {
     return prisma.user.count({
       where: { deletedAt: null },
+    });
+  },
+
+  findAllDeleted({ skip, take }) {
+    return prisma.user.findMany({
+      skip,
+      take,
+      where: {
+        deletedAt: { not: null },
+      },
+      orderBy: {
+        deletedAt: "desc",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        deletedAt: true,
+      },
+    });
+  },
+
+  countDeleted() {
+    return prisma.user.count({
+      where: {
+        deletedAt: { not: null },
+      },
     });
   },
 };
